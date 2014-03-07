@@ -36,9 +36,14 @@ class LiveUpdatePage(Reddit):
     extra_stylesheets = Reddit.extra_stylesheets + ["liveupdate.less"]
 
     def __init__(self, content, websocket_url=None):
+        # Convert set to list for JSON serializing
+        embeddable_domains = list(g.liveupdate_embeddable_domains)
+
         extra_js_config = {
             "liveupdate_event": c.liveupdate_event._id,
             "liveupdate_pixel_domain": g.liveupdate_pixel_domain,
+            "media_domain": g.media_domain,
+            "liveupdate_embeddable_domains": embeddable_domains
         }
 
         if websocket_url:
