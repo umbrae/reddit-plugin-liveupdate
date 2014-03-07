@@ -5,11 +5,17 @@ from pylons import g, c, request, response
 from pylons.i18n import _
 
 from r2.controllers import add_controller
-from r2.controllers.reddit_base import RedditController, base_listing
+from r2.controllers.reddit_base import (
+    MinimalController,
+    RedditController,
+    base_listing
+)
 from r2.lib import websockets
 from r2.lib.base import BaseController, abort
 from r2.lib.db import tdb_cassandra
 from r2.lib.filters import safemarkdown
+from r2.lib.media import get_media_embed
+from r2.lib.pages import MediaEmbedBody
 from r2.lib.validator import (
     validate,
     validatedForm,
@@ -21,6 +27,7 @@ from r2.lib.validator import (
     VLimit,
     VMarkdown,
     VModhash,
+    VInt,
 )
 from r2.models import QueryBuilder, Account, LinkListing, SimpleBuilder
 from r2.lib.errors import errors
@@ -397,3 +404,68 @@ class LiveUpdateController(RedditController):
         LiveUpdateStream.add_update(c.liveupdate_event, update)
 
         send_websocket_broadcast(type="strike", payload=update._fullname)
+
+
+@add_controller
+class LiveUpdateEmbedController(MinimalController):
+    def __before__(self, event):
+        MinimalController.__before__(self)
+
+        if event:
+            try:
+                c.liveupdate_event = LiveUpdateEvent._byID(event)
+            except tdb_cassandra.NotFound:
+                pass
+
+        if not c.liveupdate_event:
+            self.abort404()
+
+
+    @validate(
+        liveupdate=VLiveUpdate('liveupdate'),
+    )
+    def GET_mediaembeds(self, liveupdate):
+        media_objects = getattr(liveupdate, 'media_objects', [])
+
+        response = []
+        for i, media_object in enumerate(media_objects):
+            response.append({
+                "url": media_object['oembed']['url'],
+                "width": media_object['oembed']['width'],
+                "height": media_object['oembed']['height'],
+                "embed_href": (
+                    "//%s/mediaembed/liveupdate/%s/LiveUpdate_%s/%d" % (
+                        g.media_domain, c.liveupdate_event._id,
+                        liveupdate._id, i)
+                    )
+            })
+
+        return self.api_wrapper(response)
+
+
+    @validate(
+        liveupdate=VLiveUpdate('liveupdate'),
+        embed_index=VInt('embed_index', min=0)
+    )
+    def GET_mediaembed(self, liveupdate, embed_index):
+        # TODO: Using the raw index on this feels pretty gross but works
+        # fine with this implementation. Should I stuff a UUID in there
+        # for future proofing instead?
+
+        if c.errors or request.host != g.media_domain:
+            # don't serve up untrusted content except on our
+            # specifically untrusted domain
+            abort(404)
+
+        media_objects = getattr(liveupdate, 'media_objects', [])
+
+        try:
+            media_object = media_objects[embed_index]
+        except IndexError:
+            abort(404)
+
+        media_embed = get_media_embed(media_object)
+        content = media_embed.content
+        c.allow_framing = True
+
+        return MediaEmbedBody(body=content).render()

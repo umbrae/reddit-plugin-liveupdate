@@ -5,11 +5,14 @@ import uuid
 
 import pytz
 
+from pylons import g
+
 from pycassa.util import convert_uuid_to_time
 from pycassa.system_manager import TIME_UUID_TYPE, UTF8_TYPE
 
 from r2.lib.db import tdb_cassandra
 from r2.lib import utils
+from r2.lib.media import Scraper
 
 from reddit_liveupdate.permissions import ReporterPermissionSet
 
@@ -89,9 +92,12 @@ class LiveUpdateStream(tdb_cassandra.View):
     }
 
     @classmethod
-    def add_update(cls, event, update):
+    def add_update(cls, event, update, parse_embeds=True):
         columns = cls._obj_to_column(update)
         cls._set_values(event._id, columns)
+        if parse_embeds:
+            cls._parse_update_embeds(event, update)
+
 
     @classmethod
     def get_update(cls, event, id):
@@ -103,6 +109,44 @@ class LiveUpdateStream(tdb_cassandra.View):
             raise tdb_cassandra.NotFound, "<LiveUpdate %s>" % id
         else:
             return LiveUpdate.from_json(id, data)
+
+    @classmethod
+    def _parse_update_embeds(cls, event, update):
+        """ Parse an updates body, find embed-friendly URLs, scrape their
+            embeds and update the embeds dict.
+        """
+
+        urls = [u for u in utils.extract_urls_from_markdown(update.body)
+                if utils.domain(u) in g.liveupdate_embeddable_domains]
+
+        media_objects = []
+        embed_count = 0
+        for url in urls:
+            # Too many embeds, this could be a DoS attempt or something. Just
+            # bail on any more embeds for this update.
+            if embed_count > 15:
+                return
+
+            scraper = Scraper.for_url(url)
+            scraper.maxwidth = 485
+
+            thumbnail, media_object, secure_media_object = scraper.scrape()
+            if media_object:
+                embed_count += 1
+                # Use our exact passed URL to ensure matching in markdown.
+                # Some scrapers will canonicalize a URL to something we
+                # haven't seen yet.
+                media_object['oembed']['url'] = url
+                media_objects.append(media_object)
+
+        update.media_objects = media_objects
+
+        # Todo: I don't really like re-using add_update here with a flag,
+        # but I'm not sure of a better way to save this. Looks like strike
+        # and other edits use this too. Thoughts on this appreciated.
+        # Todo on this todo: remove it and make it a comment on the PR.
+        cls.add_update(event, update, parse_embeds=False)
+
 
     @classmethod
     def _obj_to_column(cls, entries):
@@ -122,6 +166,7 @@ class LiveUpdate(object):
     defaults = {
         "deleted": False,
         "stricken": False,
+        "media_objects": [], # Are multi-value objects an antipattern?
     }
 
     def __init__(self, id=None, data=None):

@@ -6,6 +6,7 @@ r.liveupdate = {
         this.$listing = $('.liveupdate-listing')
         this.$table = this.$listing.find('table tbody')
         this.$statusField = this.$listing.find('tr.initial td')
+        this._embedViewer = new r.liveupdate.EmbedViewer()
 
         this.$listing.find('nav.nextprev').remove()
         $(window)
@@ -42,6 +43,7 @@ r.liveupdate = {
 
         this._pixelsFetched = 0
         this._fetchPixel()
+        this._embedViewer.init()
     },
 
     _onPageVisible: function () {
@@ -251,5 +253,100 @@ _.extend(r.liveupdate.Countdown.prototype, {
         }
     }
 })
+
+/**
+ * EmbedViewer displays matching embeddable links inline nicely for live updates (like tweets).
+ * Workflow:
+ * 1. On load of new listings, match the links within each of them to see if they have matching domains for potential
+ *    embedding (or RE's depending on lookup time.)
+ * 2. For each of those links, flag them to load the embed on visibility in the viewport.
+ * 3. On visibility in the viewport replace the matching link with the associated embed.
+**/
+r.liveupdate.EmbedViewer = function() {
+}
+
+_.extend(r.liveupdate.EmbedViewer.prototype, {
+    /**
+     * domains of every potentially embeddable domain. We use this for matching to determine if we should pull
+     * any possible embeds for this update. Used with an object with keys for fast matching.
+    **/
+    _embedDomains: _.object(r.config.liveupdate_embeddable_domains, true),
+    _embedBase: '//' + r.config.media_domain + '/mediaembed/liveupdate/' + r.config.liveupdate_event,
+
+    /** Borrowed from http://stackoverflow.com/a/7557433 **/
+    _isElementInViewport: function(el) {
+        var rect = el.getBoundingClientRect()
+
+        return (
+            rect.top >= 0 &&
+            rect.left >= 0 &&
+            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+            rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+        )
+    },
+
+    /**
+     * Given an embeddable link, replace it with the embed associated with it.
+     * Todo: This currently will make 2N requests per update if an update has multiple embeds, as it will repeat
+     * the first call to get all of the embeds for an update. We should probably make this be update-based
+     * rather than link-based.
+    **/
+    _renderEmbed: function(el) {
+        var updateId = $(el).parents('tr').data('fullname')
+            embedsUri = this._embedBase + '/' + updateId
+
+        $.getJSON(embedsUri, function(response) {
+            var embed = _.findWhere(response, {url: el.href})
+            if (embed) {
+                /* Todo: We need to make height dynamic using postMessage. */
+                var iframe = $('<iframe />').attr({
+                    'class': 'embedFrame',
+                    'src': embed.embed_href,
+                    'width': embed.width,
+                    'height': embed.height || 600
+                })
+                $(el).replaceWith(iframe)
+            }
+        })
+    },
+
+    /**
+     * Look for embeds in the viewport that have yet to be rendered, render
+     * and flag them.
+    **/
+    _renderVisibleEmbeds: function() {
+        $('a.pending-embed').each(_.bind(function(i, el) {
+            if (this._isElementInViewport(el)) {
+                $(el).removeClass('pending-embed')
+                this._renderEmbed(el)
+            }
+        }, this))
+    },
+
+    /**
+     * Find all links in usertext body. For each of them, determine if they are embeddable, and flag them to be
+     * embedded if so.
+    */
+    _bindToLinks: function() {
+        var $listingLinks = $('.liveupdate-listing .usertext-body a')
+
+        $listingLinks.each(_.bind(function(i, el) {
+            var domain = el.hostname.replace(/^www\./,'')
+            if (_.has(this._embedDomains, domain)) {
+                $(el).addClass('pending-embed')
+            }
+        }, this))
+    },
+
+    _listen: function() {
+       this._bindToLinks()
+       $(window).on('load resize scroll', $.proxy(this, '_renderVisibleEmbeds'))
+    },
+
+    init: function() {
+        this._listen()
+    }
+})
+
 
 r.liveupdate.init()
