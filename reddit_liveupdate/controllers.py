@@ -347,28 +347,6 @@ class LiveUpdateEmbedController(MinimalController):
 
     @validate(
         liveupdate=VLiveUpdate('liveupdate'),
-    )
-    def GET_mediaembeds(self, liveupdate):
-        media_objects = getattr(liveupdate, 'media_objects', [])
-
-        response = []
-        for i, media_object in enumerate(media_objects):
-            response.append({
-                "url": media_object['oembed']['url'],
-                "width": media_object['oembed']['width'],
-                "height": media_object['oembed']['height'],
-                "embed_href": (
-                    "//%s/mediaembed/liveupdate/%s/LiveUpdate_%s/%d" % (
-                        g.media_domain, c.liveupdate_event._id,
-                        liveupdate._id, i)
-                    )
-            })
-
-        return self.api_wrapper(response)
-
-
-    @validate(
-        liveupdate=VLiveUpdate('liveupdate'),
         embed_index=VInt('embed_index', min=0)
     )
     def GET_mediaembed(self, liveupdate, embed_index):

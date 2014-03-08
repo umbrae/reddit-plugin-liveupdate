@@ -54,9 +54,6 @@ class LiveUpdate(Plugin):
         mc("/api/live/:event/:action", controller="liveupdate",
            conditions={"function": not_in_sr})
 
-        mc('/mediaembed/liveupdate/:event/:liveupdate',
-           controller="liveupdateembed", action="mediaembeds")
-
         mc('/mediaembed/liveupdate/:event/:liveupdate/:embed_index',
            controller="liveupdateembed", action="mediaembed")
 

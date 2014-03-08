@@ -158,7 +158,7 @@ class LiveUpdate(object):
     defaults = {
         "deleted": False,
         "stricken": False,
-        "media_objects": [], # Are multi-value objects an antipattern?
+        "media_objects": [],
     }
 
     def __init__(self, id=None, data=None):
@@ -197,6 +197,20 @@ class LiveUpdate(object):
     @property
     def _fullname(self):
         return "%s_%s" % (self.__class__.__name__, self._id)
+
+    @property
+    def _embeds(self):
+        """ Return the media objects in a whitelisted format friendly for
+            rendering as json to the user. """
+
+        embeds = []
+        for media_object in self.media_objects:
+            embeds.append({
+                "url": media_object['oembed']['url'],
+                "width": media_object['oembed']['width'],
+                "height": media_object['oembed']['height'] or 600,
+            })
+        return embeds
 
 
 class ActiveVisitorsByLiveUpdateEvent(tdb_cassandra.View):

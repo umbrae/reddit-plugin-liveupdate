@@ -288,28 +288,26 @@ _.extend(r.liveupdate.EmbedViewer.prototype, {
     },
 
     /**
-     * Given an embeddable link, replace it with the embed associated with it.
-     * Todo: This currently will make 2N requests per update if an update has multiple embeds, as it will repeat
-     * the first call to get all of the embeds for an update. We should probably make this be update-based
-     * rather than link-based.
+     * Given an update with embeds, replace its embed links with proper embeds.
     **/
-    _renderEmbed: function(el) {
-        var updateId = $(el).parents('tr').data('fullname')
-            embedsUri = this._embedBase + '/' + updateId
+    _renderUpdateEmbeds: function(el) {
+        var $el = $(el),
+            updateId = $el.data('fullname'),
+            embeds = $el.data('embeds');
+            // embedUri = this._embedBase + '/' + updateId + '/' + $(el).data('embed-index');
 
-        $.getJSON(embedsUri, function(response) {
-            var embed = _.findWhere(response, {url: el.href})
-            if (embed) {
-                /* Todo: We need to make height dynamic using postMessage. */
-                var iframe = $('<iframe />').attr({
+        _.each(embeds, function(embed, embedIndex) {
+            var $link = $el.find('a[href="' + embed.url + '"]'),
+                embedUri = this._embedBase + '/' + updateId + '/' + embedIndex,
+                iframe = $('<iframe />').attr({
                     'class': 'embedFrame',
-                    'src': embed.embed_href,
+                    'src': embedUri,
                     'width': embed.width,
-                    'height': embed.height || 600
+                    'height': embed.height
                 })
-                $(el).replaceWith(iframe)
-            }
-        })
+            $link.replaceWith(iframe)
+        }, this);
+
     },
 
     /**
@@ -317,31 +315,16 @@ _.extend(r.liveupdate.EmbedViewer.prototype, {
      * and flag them.
     **/
     _renderVisibleEmbeds: function() {
-        $('a.pending-embed').each(_.bind(function(i, el) {
+        $('.pending-embed').each(_.bind(function(i, el) {
             if (this._isElementInViewport(el)) {
                 $(el).removeClass('pending-embed')
-                this._renderEmbed(el)
-            }
-        }, this))
-    },
-
-    /**
-     * Find all links in usertext body. For each of them, determine if they are embeddable, and flag them to be
-     * embedded if so.
-    */
-    _bindToLinks: function() {
-        var $listingLinks = $('.liveupdate-listing .usertext-body a')
-
-        $listingLinks.each(_.bind(function(i, el) {
-            var domain = el.hostname.replace(/^www\./,'')
-            if (_.has(this._embedDomains, domain)) {
-                $(el).addClass('pending-embed')
+                this._renderUpdateEmbeds(el)
             }
         }, this))
     },
 
     _listen: function() {
-       this._bindToLinks()
+        $('tr[data-embeds]').addClass('pending-embed');
        $(window).on('load resize scroll', $.proxy(this, '_renderVisibleEmbeds'))
     },
 
