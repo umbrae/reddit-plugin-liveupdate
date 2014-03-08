@@ -117,6 +117,8 @@ class LiveUpdateStream(tdb_cassandra.View):
         """ Parse a liveupdate body, find embed-friendly URLs, scrape their
             embeds, update the embeds dict, and send an event notifying
             frontends of the new embeds for the update.
+
+            Return the newly altered liveupdate.
         """
         if isinstance(liveupdate_id, basestring):
             liveupdate_id = uuid.UUID(liveupdate_id)
@@ -132,6 +134,8 @@ class LiveUpdateStream(tdb_cassandra.View):
         urls = embeddable_urls(liveupdate.body)
         liveupdate.media_objects = generate_media_objects(urls)
         LiveUpdateStream.add_update(event, liveupdate, parse_embeds=False)
+
+        return liveupdate
 
     @classmethod
     def _obj_to_column(cls, entries):
@@ -192,7 +196,7 @@ class LiveUpdate(object):
         return "%s_%s" % (self.__class__.__name__, self._id)
 
     @property
-    def _embeds(self):
+    def embeds(self):
         """ Return the media objects in a whitelisted format friendly for
             rendering as json to the user. """
 

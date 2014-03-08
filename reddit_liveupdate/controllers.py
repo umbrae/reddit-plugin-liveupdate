@@ -40,6 +40,7 @@ from reddit_liveupdate.models import (
     LiveUpdateStream,
     ActiveVisitorsByLiveUpdateEvent,
 )
+from reddit_liveupdate.utils import send_event_broadcast
 from reddit_liveupdate.validators import (
     VLiveUpdate,
     VLiveUpdateEventReporter,
@@ -49,9 +50,8 @@ from reddit_liveupdate.validators import (
 )
 
 
-def send_websocket_broadcast(type, payload):
-    websockets.send_broadcast(namespace="/live/" + c.liveupdate_event._id,
-                              type=type, payload=payload)
+def _broadcast(type, payload):
+    send_event_broadcast(c.liveupdate_event._id, type, payload)
 
 
 class LiveUpdateBuilder(QueryBuilder):
@@ -215,7 +215,7 @@ class LiveUpdateController(RedditController):
             changes["title"] = title
         if description != c.liveupdate_event.description:
             changes["description"] = safemarkdown(description, wrap=False)
-        send_websocket_broadcast(type="settings", payload=changes)
+        _broadcast(type="settings", payload=changes)
 
         c.liveupdate_event.title = title
         c.liveupdate_event.description = description
@@ -295,7 +295,7 @@ class LiveUpdateController(RedditController):
         builder = LiveUpdateBuilder(None)
         wrapped = builder.wrap_items([update])
         rendered = [w.render() for w in wrapped]
-        send_websocket_broadcast(type="update", payload=rendered)
+        _broadcast(type="update", payload=rendered)
 
         # reset the submission form
         t = form.find("textarea")
@@ -313,7 +313,7 @@ class LiveUpdateController(RedditController):
         update.deleted = True
         LiveUpdateStream.add_update(c.liveupdate_event, update)
 
-        send_websocket_broadcast(type="delete", payload=update._fullname)
+        _broadcast(type="delete", payload=update._fullname)
 
     @validatedForm(
         VLiveUpdateEventReporter(),
@@ -327,7 +327,7 @@ class LiveUpdateController(RedditController):
         update.stricken = True
         LiveUpdateStream.add_update(c.liveupdate_event, update)
 
-        send_websocket_broadcast(type="strike", payload=update._fullname)
+        _broadcast(type="strike", payload=update._fullname)
 
 
 @add_controller

@@ -5,6 +5,7 @@ import pytz
 
 from babel.dates import format_time, format_datetime
 from pylons import c, g
+from r2.lib import websockets
 from r2.lib.media import Scraper
 from r2.lib.utils import extract_urls_from_markdown, domain
 
@@ -41,6 +42,13 @@ def pretty_time(dt):
             format="dd MMM YYYY HH:mm z",
             locale=c.locale,
         )
+
+
+def send_event_broadcast(event_id, type, payload):
+    """ Send a liveupdate broadcast for a specific event. """
+    websockets.send_broadcast(namespace="/live/" + event_id,
+                              type=type,
+                              payload=payload)
 
 
 def embeddable_urls(md):
