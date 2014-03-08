@@ -25,7 +25,8 @@ r.liveupdate = {
                 'message:activity': this._onActivityUpdated,
                 'message:refresh': this._onRefresh,
                 'message:settings': this._onSettingsChanged,
-                'message:update': this._onNewUpdate
+                'message:update': this._onNewUpdate,
+                'message:render_embeds': this._onRenderEmbeds
             }, this)
             this._websocket.start()
         }
@@ -117,6 +118,14 @@ r.liveupdate = {
             this._unreadUpdates += data.length
             Tinycon.setBubble(this._unreadUpdates)
         }
+    },
+
+    _onRenderEmbeds: function (data) {
+        $('tr.id-LiveUpdate_' + data.liveupdate_id)
+            .data('embeds', data.media_embeds)
+            .addClass('pending-embed')
+
+        $(window).trigger('liveupdate:refreshEmbeds')
     },
 
     _onDelete: function (id) {
@@ -323,7 +332,7 @@ _.extend(r.liveupdate.EmbedViewer.prototype, {
 
     _listen: function() {
         $('tr[data-embeds]').addClass('pending-embed');
-       $(window).on('load resize scroll', $.proxy(this, '_renderVisibleEmbeds'))
+       $(window).on('load resize scroll liveupdate:refreshEmbeds', $.proxy(this, '_renderVisibleEmbeds'))
     },
 
     init: function() {
