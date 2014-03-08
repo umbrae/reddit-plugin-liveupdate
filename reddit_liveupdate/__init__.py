@@ -70,3 +70,9 @@ class LiveUpdate(Plugin):
 
         from reddit_liveupdate import scraper
         scraper.hooks.register_all()
+
+    def declare_queues(self, queues):
+        from r2.config.queues import MessageQueue
+        queues.declare({
+            "liveupdate_q": MessageQueue(bind_to_self=True),
+        })

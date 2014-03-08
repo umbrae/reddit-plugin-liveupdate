@@ -10,9 +10,10 @@ from pylons import g
 from pycassa.util import convert_uuid_to_time
 from pycassa.system_manager import TIME_UUID_TYPE, UTF8_TYPE
 
+from r2.lib import amqp, utils
 from r2.lib.db import tdb_cassandra
-from r2.lib import utils
-from r2.lib.media import Scraper
+from reddit_liveupdate.utils import embeddable_urls, generate_media_objects
+
 
 class LiveUpdateEvent(tdb_cassandra.Thing):
     _reporter_prefix = "reporter_"
@@ -88,8 +89,7 @@ class LiveUpdateStream(tdb_cassandra.View):
         columns = cls._obj_to_column(update)
         cls._set_values(event._id, columns)
         if parse_embeds:
-            cls._parse_update_embeds(event, update)
-
+            cls.queue_update_embeds(event, update)
 
     @classmethod
     def get_update(cls, event, id):
@@ -103,42 +103,35 @@ class LiveUpdateStream(tdb_cassandra.View):
             return LiveUpdate.from_json(id, data)
 
     @classmethod
-    def _parse_update_embeds(cls, event, update):
-        """ Parse an updates body, find embed-friendly URLs, scrape their
-            embeds and update the embeds dict.
+    def queue_update_embeds(cls, event, update):
+        g.log.debug('queuing update of embeds for %s:%s' % (event, update))
+        msg = json.dumps({
+            'action': 'parse_embeds',
+            'liveupdate_id': unicode(update._id),  # serializing UUID
+            'event_id': event._id,  # This _id is already a string :(
+        })
+        amqp.add_item('liveupdate_q', msg)
+
+    @classmethod
+    def parse_embeds(cls, event_id, liveupdate_id, maxwidth=485):
+        """ Parse a liveupdate body, find embed-friendly URLs, scrape their
+            embeds, update the embeds dict, and send an event notifying
+            frontends of the new embeds for the update.
         """
+        if isinstance(liveupdate_id, basestring):
+            liveupdate_id = uuid.UUID(liveupdate_id)
 
-        urls = [u for u in utils.extract_urls_from_markdown(update.body)
-                if utils.domain(u) in g.liveupdate_embeddable_domains]
+        try:
+            event = LiveUpdateEvent._byID(event_id)
+            liveupdate = LiveUpdateStream.get_update(event, liveupdate_id)
+        except tdb_cassandra.NotFound:
+            g.log.warning("Couldn't find event or liveupdate for embedding: "
+                          "%s / %s" % (event_id, liveupdate_id))
+            return
 
-        media_objects = []
-        embed_count = 0
-        for url in urls:
-            # Too many embeds, this could be a DoS attempt or something. Just
-            # bail on any more embeds for this update.
-            if embed_count > 15:
-                return
-
-            scraper = Scraper.for_url(url)
-            scraper.maxwidth = 485
-
-            thumbnail, media_object, secure_media_object = scraper.scrape()
-            if media_object:
-                embed_count += 1
-                # Use our exact passed URL to ensure matching in markdown.
-                # Some scrapers will canonicalize a URL to something we
-                # haven't seen yet.
-                media_object['oembed']['url'] = url
-                media_objects.append(media_object)
-
-        update.media_objects = media_objects
-
-        # Todo: I don't really like re-using add_update here with a flag,
-        # but I'm not sure of a better way to save this. Looks like strike
-        # and other edits use this too. Thoughts on this appreciated.
-        # Todo on this todo: remove it and make it a comment on the PR.
-        cls.add_update(event, update, parse_embeds=False)
-
+        urls = embeddable_urls(liveupdate.body)
+        liveupdate.media_objects = generate_media_objects(urls)
+        LiveUpdateStream.add_update(event, liveupdate, parse_embeds=False)
 
     @classmethod
     def _obj_to_column(cls, entries):
