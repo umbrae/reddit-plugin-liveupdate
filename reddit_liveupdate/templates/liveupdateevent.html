@@ -30,6 +30,8 @@
   <a href="/live/${c.liveupdate_event._id}/reporters" class="more-reporters">${unsafe(_("&hellip; and %(count)s more &raquo;") % dict(count=len(thing.reporters) - REPORTER_CUTOFF))}</a>
   % endif
 </div>
+
+<label><input type="checkbox"  id="desktop-notifications"> GET DESKTOP NOTIFIED</label>
 </header>
 
 % if c.liveupdate_can_edit:
