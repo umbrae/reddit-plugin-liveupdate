@@ -103,18 +103,25 @@ r.liveupdate = {
         if (!this.$listing.length)
             window.location.reload()
 
-        var now = Date.now()
-        _.each(data, function (thing) {
-            var $newThing = $($.unsafe(thing.data.content))
-            if (r.liveupdate.reporter) {
-                r.liveupdate.reporter._addButtons($newThing.find('td'))
-            }
-            $initial.after($newThing)
-            r.timetext.refreshOne($newThing.find('time.live'), now)
-        })
+        var thing = data
+        if ($.isArray(data)) {
+            thing = data[0]
+        }
+
+        var content = thing.rendered
+        if (!content) {
+            content = thing.data.content
+        }
+
+        var $newThing = $($.unsafe(content))
+        if (r.liveupdate.reporter) {
+            r.liveupdate.reporter._addButtons($newThing.find('td'))
+        }
+        $initial.after($newThing)
+        r.timetext.refreshOne($newThing.find('time.live'))
 
         if (!this._pageVisible) {
-            this._unreadUpdates += data.length
+            this._unreadUpdates += 1
             Tinycon.setBubble(this._unreadUpdates)
         }
     },
