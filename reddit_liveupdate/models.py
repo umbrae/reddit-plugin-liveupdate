@@ -115,8 +115,7 @@ class LiveUpdateStream(tdb_cassandra.View):
     @classmethod
     def parse_embeds(cls, event_id, liveupdate_id, maxwidth=485):
         """ Parse a liveupdate body, find embed-friendly URLs, scrape their
-            embeds, update the embeds dict, and send an event notifying
-            frontends of the new embeds for the update.
+            embeds, and update the embeds dict.
 
             Return the newly altered liveupdate.
         """
@@ -205,7 +204,7 @@ class LiveUpdate(object):
             embeds.append({
                 "url": media_object['oembed']['url'],
                 "width": media_object['oembed']['width'],
-                "height": media_object['oembed']['height'] or 600,
+                "height": media_object['oembed']['height'],
             })
         return embeds
 

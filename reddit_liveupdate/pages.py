@@ -8,7 +8,7 @@ from pylons import c, g
 from pylons.i18n import _, ungettext
 
 from r2.lib import filters
-from r2.lib.pages import Reddit, UserTableItem
+from r2.lib.pages import Reddit, UserTableItem, MediaEmbedBody
 from r2.lib.menus import NavMenu, NavButton
 from r2.lib.template_helpers import add_sr
 from r2.lib.memoize import memoize
@@ -302,6 +302,10 @@ class LiveUpdateListing(Listing):
             items.append(update)
 
         return items
+
+
+class LiveUpdateMediaEmbedBody(MediaEmbedBody):
+    pass
 
 
 def liveupdate_add_props(user, wrapped):

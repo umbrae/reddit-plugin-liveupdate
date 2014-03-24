@@ -302,21 +302,19 @@ _.extend(r.liveupdate.EmbedViewer.prototype, {
     _renderUpdateEmbeds: function(el) {
         var $el = $(el),
             updateId = $el.data('fullname'),
-            embeds = $el.data('embeds');
-            // embedUri = this._embedBase + '/' + updateId + '/' + $(el).data('embed-index');
+            embeds = $el.data('embeds')
 
         _.each(embeds, function(embed, embedIndex) {
             var $link = $el.find('a[href="' + embed.url + '"]'),
                 embedUri = this._embedBase + '/' + updateId + '/' + embedIndex,
                 iframe = $('<iframe />').attr({
-                    'class': 'embedFrame',
+                    'class': 'embedFrame embed-' + embedIndex,
                     'src': embedUri,
                     'width': embed.width,
                     'height': embed.height
                 })
             $link.replaceWith(iframe)
-        }, this);
-
+        }, this)
     },
 
     /**
@@ -332,9 +330,29 @@ _.extend(r.liveupdate.EmbedViewer.prototype, {
         }, this))
     },
 
+    _handleMessage: function(e) {
+       var ev = e.originalEvent
+
+       if (ev.origin.replace(/^https?:\/\//,'') !== r.config.media_domain) {
+           return false
+       }
+
+       var data = JSON.parse(ev.data)
+       if (data.action === 'dimensionsChange') {
+           /* Yuck. A good reason to give embeds unique IDs. */
+           var $embedFrame = $('.id-LiveUpdate_' + data.updateId + ' .embed-' + data.embedIndex),
+               dimensions = data.dimensions.split('x')
+
+           $embedFrame.attr({
+               'width': dimensions[0],
+               'height': dimensions[1]
+           })
+       }
+    },
+
     _listen: function() {
-        $('tr[data-embeds]').addClass('pending-embed');
        $(window).on('load resize scroll liveupdate:refreshEmbeds', $.proxy(this, '_renderVisibleEmbeds'))
+       $(window).on('message', this._handleMessage)
     },
 
     init: function() {

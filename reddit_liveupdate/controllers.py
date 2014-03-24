@@ -344,16 +344,11 @@ class LiveUpdateEmbedController(MinimalController):
         if not c.liveupdate_event:
             self.abort404()
 
-
     @validate(
         liveupdate=VLiveUpdate('liveupdate'),
         embed_index=VInt('embed_index', min=0)
     )
     def GET_mediaembed(self, liveupdate, embed_index):
-        # TODO: Using the raw index on this feels pretty gross but works
-        # fine with this implementation. Should I stuff a UUID in there
-        # for future proofing instead?
-
         if c.errors or request.host != g.media_domain:
             # don't serve up untrusted content except on our
             # specifically untrusted domain
@@ -366,8 +361,15 @@ class LiveUpdateEmbedController(MinimalController):
         except IndexError:
             abort(404)
 
-        media_embed = get_media_embed(media_object)
-        content = media_embed.content
+        embed = get_media_embed(media_object)
+        content = embed.content
         c.allow_framing = True
 
-        return MediaEmbedBody(body=content).render()
+        args = {
+            "body": content,
+            "unknown_dimensions": not (embed.width and embed.height),
+            "liveupdate_id": unicode(liveupdate._id),  # UUID serializing
+            "embed_index": embed_index,
+        }
+
+        return pages.LiveUpdateMediaEmbedBody(**args).render()
