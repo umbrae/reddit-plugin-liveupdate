@@ -268,20 +268,13 @@ _.extend(r.liveupdate.Countdown.prototype, {
 /**
  * EmbedViewer displays matching embeddable links inline nicely for live updates (like tweets).
  * Workflow:
- * 1. On load of new listings, match the links within each of them to see if they have matching domains for potential
- *    embedding (or RE's depending on lookup time.)
- * 2. For each of those links, flag them to load the embed on visibility in the viewport.
- * 3. On visibility in the viewport replace the matching link with the associated embed.
+ * 1. On scroll, see if updates with pending embeds are in the viewport (denoted by .pending-embed)
+ * 2. For each of those updates, load all of the embeds within the update and replace them with their iframes.
 **/
 r.liveupdate.EmbedViewer = function() {
 }
 
 _.extend(r.liveupdate.EmbedViewer.prototype, {
-    /**
-     * domains of every potentially embeddable domain. We use this for matching to determine if we should pull
-     * any possible embeds for this update. Used with an object with keys for fast matching.
-    **/
-    _embedDomains: _.object(r.config.liveupdate_embeddable_domains, true),
     _embedBase: '//' + r.config.media_domain + '/mediaembed/liveupdate/' + r.config.liveupdate_event,
 
     /** Borrowed from http://stackoverflow.com/a/7557433 **/
@@ -311,15 +304,16 @@ _.extend(r.liveupdate.EmbedViewer.prototype, {
                     'class': 'embedFrame embed-' + embedIndex,
                     'src': embedUri,
                     'width': embed.width,
-                    'height': embed.height
+                    'height': embed.height || 200,
+                    'scrolling': 'no',
+                    'frameborder': 0
                 })
             $link.replaceWith(iframe)
         }, this)
     },
 
     /**
-     * Look for embeds in the viewport that have yet to be rendered, render
-     * and flag them.
+     * Look for updates in the viewport that have embeds yet to be rendered, render them.
     **/
     _renderVisibleEmbeds: function() {
         $('.pending-embed').each(_.bind(function(i, el) {
@@ -344,7 +338,7 @@ _.extend(r.liveupdate.EmbedViewer.prototype, {
                dimensions = data.dimensions.split('x')
 
            $embedFrame.attr({
-               'width': dimensions[0],
+               'width': Math.min(dimensions[0], 480),
                'height': dimensions[1]
            })
        }
