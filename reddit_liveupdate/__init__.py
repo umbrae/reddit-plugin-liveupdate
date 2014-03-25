@@ -13,9 +13,6 @@ class LiveUpdate(Plugin):
         ConfigValue.str: [
             "liveupdate_pixel_domain",
         ],
-        ConfigValue.set: [
-            "liveupdate_embeddable_domains",
-        ],
     }
 
     js = {
