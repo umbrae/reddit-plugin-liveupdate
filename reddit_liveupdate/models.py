@@ -90,7 +90,7 @@ class LiveUpdateStream(tdb_cassandra.View):
         columns = cls._obj_to_column(update)
         cls._set_values(event._id, columns)
         if parse_embeds:
-            cls.queue_update_embeds(event, update)
+            cls.queue_parse_embeds(event, update)
 
     @classmethod
     def get_update(cls, event, id):
@@ -104,8 +104,7 @@ class LiveUpdateStream(tdb_cassandra.View):
             return LiveUpdate.from_json(id, data)
 
     @classmethod
-    def queue_update_embeds(cls, event, update):
-        g.log.debug('queuing update of embeds for %s:%s' % (event, update))
+    def queue_parse_embeds(cls, event, update):
         msg = json.dumps({
             'action': 'parse_embeds',
             'liveupdate_id': unicode(update._id),  # serializing UUID
@@ -115,10 +114,11 @@ class LiveUpdateStream(tdb_cassandra.View):
 
     @classmethod
     def parse_embeds(cls, event_id, liveupdate_id, maxwidth=485):
-        """ Parse a liveupdate body, find embed-friendly URLs, scrape their
-            embeds, and update the embeds dict.
+        """Find, scrape, and store any embeddable URLs in this liveupdate.
 
-            Return the newly altered liveupdate.
+        Return the newly altered liveupdate.
+        Note: This should be used in async contexts only.
+
         """
         if isinstance(liveupdate_id, basestring):
             liveupdate_id = uuid.UUID(liveupdate_id)

@@ -6,10 +6,14 @@ from reddit_liveupdate.models import LiveUpdateStream
 from reddit_liveupdate.utils import send_event_broadcast
 
 
-def _parse_embeds(event_id, liveupdate_id, maxwidth=485):
+def _parse_and_broadcast_embeds(event_id, liveupdate_id, maxwidth=485):
+    """Parse a liveupdates embeds and notify consumers if we had any."""
     liveupdate = LiveUpdateStream.parse_embeds(event_id,
                                                liveupdate_id,
                                                maxwidth)
+
+    if not liveupdate.media_objects:
+        return
 
     payload = {
         "liveupdate_id": liveupdate_id,
@@ -20,7 +24,7 @@ def _parse_embeds(event_id, liveupdate_id, maxwidth=485):
 
 def process_liveupdate_q():
     _handlers = {
-        "parse_embeds": _parse_embeds,
+        "parse_embeds": _parse_and_broadcast_embeds,
     }
 
     @g.stats.amqp_processor('liveupdate_q')
@@ -31,6 +35,7 @@ def process_liveupdate_q():
         if action in _handlers:
             _handlers[action](**data)
         else:
-            g.log.debug("Unknown action %s. Data: %s" % action, data)
+            g.log.warning("Unknown liveupdate amqp action %s. Data: %s" %
+                          (action, data))
 
     amqp.consume_items('liveupdate_q', _handle_liveupdate_q, verbose=False)

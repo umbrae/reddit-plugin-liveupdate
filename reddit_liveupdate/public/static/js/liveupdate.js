@@ -305,10 +305,9 @@ r.liveupdate.EmbedViewer = r.ScrollUpdater.extend({
         var updateId = $el.data('fullname'),
             embeds = $el.data('embeds')
 
-        if (!$el.is('.pending-embed')) {
+        if (!$el.hasClass('pending-embed')) {
             return
         }
-
         $el.removeClass('pending-embed')
 
         _.each(embeds, function(embed, embedIndex) {
