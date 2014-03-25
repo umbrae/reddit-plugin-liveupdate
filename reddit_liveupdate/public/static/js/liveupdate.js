@@ -319,7 +319,7 @@ r.liveupdate.EmbedViewer = r.ScrollUpdater.extend({
                     'scrolling': 'no',
                     'frameborder': 0
                 })
-            r.debug("Rendering embed for link: ", $link);
+            r.debug("Rendering embed for link: ", $link)
             $link.replaceWith(iframe)
         }, this)
     },
@@ -334,7 +334,7 @@ r.liveupdate.EmbedViewer = r.ScrollUpdater.extend({
        var data = JSON.parse(ev.data)
        if (data.action === 'dimensionsChange') {
            /* Yuck. A good reason to give embeds unique IDs. */
-           var $embedFrame = $('.id-LiveUpdate_' + data.updateId + ' .embed-' + data.embedIndex);
+           var $embedFrame = $('.id-LiveUpdate_' + data.updateId + ' .embed-' + data.embedIndex)
 
            $embedFrame.attr({
                'width': Math.min(data.width, 480),
@@ -344,7 +344,7 @@ r.liveupdate.EmbedViewer = r.ScrollUpdater.extend({
     },
 
     init: function() {
-        this.start();
+        this.start()
         $(window).on('message', this._handleMessage)
     }
 })
