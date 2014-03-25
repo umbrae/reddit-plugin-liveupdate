@@ -269,31 +269,45 @@ _.extend(r.liveupdate.Countdown.prototype, {
  * 1. On scroll, see if updates with pending embeds are in the viewport (denoted by .pending-embed)
  * 2. For each of those updates, load all of the embeds within the update and replace them with their iframes.
 **/
-r.liveupdate.EmbedViewer = function() {
-}
-
-_.extend(r.liveupdate.EmbedViewer.prototype, {
+r.liveupdate.EmbedViewer = r.ScrollUpdater.extend({
+    selector: '.pending-embed',
     _embedBase: '//' + r.config.media_domain + '/mediaembed/liveupdate/' + r.config.liveupdate_event,
 
-    /** Borrowed from http://stackoverflow.com/a/7557433 **/
-    _isElementInViewport: function(el) {
-        var rect = el.getBoundingClientRect()
+    start: function(restart) {
+        this._elements = $(this.selector)
+        _.sortBy(this._elements, function(el) {
+            return $(el).offset().top
+        })
 
-        return (
-            rect.top >= 0 &&
-            rect.left >= 0 &&
-            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-            rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-        )
+        this._curIndex = 0
+        this._lastScroll = null
+        this._toUpdate = []
+        this._totalTime = 0
+
+        if (!restart) {
+            var throttledUpdate = _.throttle($.proxy(this, '_updateThings'), 20)
+            $(window).on("scroll", throttledUpdate)
+            $(window).on('liveupdate:refreshEmbeds', $.proxy(this, 'restart'))
+        }
+
+        _.defer($.proxy(this, '_updateThings'))
+
+        return this
     },
 
-    /**
-     * Given an update with embeds, replace its embed links with proper embeds.
-    **/
-    _renderUpdateEmbeds: function(el) {
-        var $el = $(el),
-            updateId = $el.data('fullname'),
+    restart: function() {
+        return this.start(true)
+    },
+
+    update: function($el) {
+        var updateId = $el.data('fullname'),
             embeds = $el.data('embeds')
+
+        if (!$el.is('.pending-embed')) {
+            return
+        }
+
+        $el.removeClass('pending-embed')
 
         _.each(embeds, function(embed, embedIndex) {
             var $link = $el.find('a[href="' + embed.url + '"]'),
@@ -306,20 +320,9 @@ _.extend(r.liveupdate.EmbedViewer.prototype, {
                     'scrolling': 'no',
                     'frameborder': 0
                 })
+            r.debug("Rendering embed for link: ", $link);
             $link.replaceWith(iframe)
         }, this)
-    },
-
-    /**
-     * Look for updates in the viewport that have embeds yet to be rendered, render them.
-    **/
-    _renderVisibleEmbeds: function() {
-        $('.pending-embed').each(_.bind(function(i, el) {
-            if (this._isElementInViewport(el)) {
-                $(el).removeClass('pending-embed')
-                this._renderUpdateEmbeds(el)
-            }
-        }, this))
     },
 
     _handleMessage: function(e) {
@@ -341,13 +344,9 @@ _.extend(r.liveupdate.EmbedViewer.prototype, {
        }
     },
 
-    _listen: function() {
-       $(window).on('load resize scroll liveupdate:refreshEmbeds', $.proxy(this, '_renderVisibleEmbeds'))
-       $(window).on('message', this._handleMessage)
-    },
-
     init: function() {
-        this._listen()
+        this.start();
+        $(window).on('message', this._handleMessage)
     }
 })
 
