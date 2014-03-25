@@ -22,6 +22,7 @@ class LiveUpdate(Plugin):
             "lib/tinycon.js",
             "websocket.js",
             "timetext.js",
+            "scrollupdater.js",
             "liveupdate.js",
         ),
         "liveupdate-reporter": Module("liveupdate-reporter.js",
