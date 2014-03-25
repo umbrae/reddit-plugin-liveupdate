@@ -438,6 +438,10 @@ class LiveUpdateEmbedController(MinimalController):
             abort(404)
 
         embed = get_media_embed(media_object)
+
+        if not embed:
+            abort(404)
+
         content = embed.content
         c.allow_framing = True
 
