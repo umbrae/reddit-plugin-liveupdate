@@ -4,7 +4,7 @@ import requests
 from pylons import g
 
 from r2.lib.hooks import HookRegistrar
-from r2.lib.media import Scraper, MediaEmbed
+from r2.lib.media import Scraper, MediaEmbed, get_media_embed
 from r2.lib.utils import UrlParser
 
 
@@ -26,6 +26,28 @@ iframe {{
 </body>
 </html>
 """
+
+
+class LiveScraper(Scraper):
+    """The interface to Scraper to be used within liveupdate, for media embeds.
+
+    Has support for scrapers that we don't necessarily want to be visible in
+    reddit core (like twitter, for example). Outside of the hook system
+    so that this functionality is not live for all uses of Scraper proper.
+
+    """
+    @classmethod
+    def for_url(cls, url, autoplay=True):
+        if (_TwitterScraper.matches(url)):
+            return _TwitterScraper(url)
+
+        return super(LiveScraper, cls).for_url(url, autoplay)
+
+
+def get_live_media_embed(media_object):
+    if media_object['type'] == "twitter.com":
+        return _TwitterScraper.media_embed(media_object)
+    return get_media_embed(media_object)
 
 
 class _LiveUpdateScraper(Scraper):
@@ -149,16 +171,8 @@ def make_scraper(url):
             else:
                 return _LiveUpdateScraper(event_id)
 
-    if (_TwitterScraper.matches(url)):
-        return _TwitterScraper(url)
-
 
 @hooks.on("scraper.media_embed")
 def make_media_embed(media_object):
-    media_type = media_object.get("type")
-
-    if media_type == "liveupdate":
+    if media_object.get("type") == "liveupdate":
         return _LiveUpdateScraper.media_embed(media_object)
-
-    if media_type == "twitter.com":
-        return _TwitterScraper.media_embed(media_object)

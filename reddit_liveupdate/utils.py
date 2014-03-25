@@ -6,8 +6,8 @@ import pytz
 from babel.dates import format_time, format_datetime
 from pylons import c, g
 from r2.lib import websockets
-from r2.lib.media import Scraper
 from r2.lib.utils import extract_urls_from_markdown, domain
+from reddit_liveupdate.scraper import LiveScraper
 
 
 def pairwise(iterable):
@@ -63,7 +63,7 @@ def generate_media_objects(urls, maxwidth=485, max_embeds=15):
     """ Given a list of embed URLs, scrape and return their media objects. """
     media_objects = []
     for url in urls:
-        scraper = Scraper.for_url(url)
+        scraper = LiveScraper.for_url(url)
         scraper.maxwidth = maxwidth
 
         # TODO: Is there a situation in which we would need the secure media

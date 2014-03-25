@@ -14,8 +14,6 @@ from r2.lib import websockets
 from r2.lib.base import BaseController, abort
 from r2.lib.db import tdb_cassandra
 from r2.lib.filters import safemarkdown
-from r2.lib.media import get_media_embed
-from r2.lib.pages import MediaEmbedBody
 from r2.lib.validator import (
     validate,
     validatedForm,
@@ -34,6 +32,7 @@ from r2.lib.errors import errors
 from r2.lib.utils import url_links_builder
 
 from reddit_liveupdate import pages
+from reddit_liveupdate.scraper import get_live_media_embed
 from reddit_liveupdate.models import (
     LiveUpdate,
     LiveUpdateEvent,
@@ -437,7 +436,7 @@ class LiveUpdateEmbedController(MinimalController):
         except IndexError:
             abort(404)
 
-        embed = get_media_embed(media_object)
+        embed = get_live_media_embed(media_object)
 
         if not embed:
             abort(404)
