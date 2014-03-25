@@ -29,7 +29,7 @@ iframe {{
 
 
 class LiveScraper(Scraper):
-    """The interface to Scraper to be used within liveupdate, for media embeds.
+    """The interface to Scraper to be used within liveupdate for media embeds.
 
     Has support for scrapers that we don't necessarily want to be visible in
     reddit core (like twitter, for example). Outside of the hook system
@@ -48,6 +48,29 @@ def get_live_media_embed(media_object):
     if media_object['type'] == "twitter.com":
         return _TwitterScraper.media_embed(media_object)
     return get_media_embed(media_object)
+
+
+def generate_media_objects(urls, maxwidth=485, max_embeds=15):
+    """Given a list of embed URLs, scrape and return their media objects."""
+    media_objects = []
+    for url in urls:
+        scraper = LiveScraper.for_url(url)
+        scraper.maxwidth = maxwidth
+
+        # TODO: Is there a situation in which we would need the secure media
+        # object? Are twitter/youtube/imgur appropriately protocol agnostic?
+        thumbnail, media_object, secure_media_object = scraper.scrape()
+        if media_object and 'oembed' in media_object:
+            # Use our exact passed URL to ensure matching in markdown.
+            # Some scrapers will canonicalize a URL to something we
+            # haven't seen yet.
+            media_object['oembed']['url'] = url
+            media_objects.append(media_object)
+
+        if len(media_objects) > max_embeds:
+            break
+
+    return media_objects
 
 
 class _LiveUpdateScraper(Scraper):
