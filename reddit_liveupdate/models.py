@@ -205,8 +205,7 @@ class LiveUpdate(object):
 
     @property
     def embeds(self):
-        """ Return the media objects in a whitelisted format friendly for
-            rendering as json to the user. """
+        """Return the media objects in a whitelisted, json-ready format."""
 
         embeds = []
         for media_object in self.media_objects:
