@@ -22,40 +22,41 @@
 
 <!doctype html>
 <html>
-  <head>
+<head>
     <style type="text/css">
-        body, object, embed, div, span, p {
-            margin:  0;
-            padding: 0;
-        }
+    html, iframe, body, object, embed, div, span, p {
+        margin: 0;
+        padding: 0;
+    }
     </style>
-  </head>
-  <body data-update-id="${thing.liveupdate_id}" data-embed-index="${thing.embed_index}">
-      ${unsafe(thing.body)}
+</head>
+<body data-update-id="${thing.liveupdate_id}" data-embed-index="${thing.embed_index}">
+    ${unsafe(thing.body)}
+    % if thing.unknown_dimensions:
+    <script type="text/javascript">
+    var updateId = document.body.getAttribute('data-update-id'),
+        embedIndex = document.body.getAttribute('data-embed-index');
 
-      % if thing.unknown_dimensions:
-      <script type="text/javascript">
-      var updateId = document.body.getAttribute('data-update-id'),
-          embedIndex = document.body.getAttribute('data-embed-index');
+    if (window.parent) {
+        var knownDimensions = "0x0";
+        window.setInterval(function() {
+            var root = document.documentElement,
+                dimensions = root.offsetWidth + 'x' + root.offsetHeight;
 
-      function _postmsg(msg, targetOrigin) {
-        /* TODO: Better origin checking? Do we care for these messages? */
-        targetOrigin = targetOrigin || '*';
-        if (window.parent) {
-            window.parent.postMessage(JSON.stringify(msg), targetOrigin);
-        }
-      }
+            if (knownDimensions === dimensions) {
+                return;
+            }
 
-      var knownDimensions = "0x0";
-      window.setInterval(function() {
-        var root = document.documentElement,
-            dimensions = root.offsetWidth + 'x' + root.offsetHeight;
-        if (knownDimensions !== dimensions) {
             knownDimensions = dimensions;
-            _postmsg({"action": "dimensionsChange", "dimensions": knownDimensions, "updateId": updateId, "embedIndex": embedIndex});
-        }
-      }, 500);
-      </script>
-      % endif
-  </body>
+            window.parent.postMessage(JSON.stringify({
+                "action": "dimensionsChange",
+                "dimensions": knownDimensions,
+                "updateId": updateId,
+                "embedIndex": embedIndex
+            }), '*');
+        }, 500);
+    }
+    </script>
+    % endif
+</body>
 </html>
