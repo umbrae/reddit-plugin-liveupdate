@@ -334,12 +334,11 @@ _.extend(r.liveupdate.EmbedViewer.prototype, {
        var data = JSON.parse(ev.data)
        if (data.action === 'dimensionsChange') {
            /* Yuck. A good reason to give embeds unique IDs. */
-           var $embedFrame = $('.id-LiveUpdate_' + data.updateId + ' .embed-' + data.embedIndex),
-               dimensions = data.dimensions.split('x')
+           var $embedFrame = $('.id-LiveUpdate_' + data.updateId + ' .embed-' + data.embedIndex);
 
            $embedFrame.attr({
-               'width': Math.min(dimensions[0], 480),
-               'height': dimensions[1]
+               'width': Math.min(data.width, 480),
+               'height': data.height
            })
        }
     },

@@ -302,6 +302,7 @@ class LiveUpdateListing(Listing):
 
 
 class LiveUpdateMediaEmbedBody(MediaEmbedBody):
+    """Purely used for differing template."""
     pass
 
 
