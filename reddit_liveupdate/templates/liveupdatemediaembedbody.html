@@ -38,19 +38,22 @@
         embedIndex = document.body.getAttribute('data-embed-index');
 
     if (window.parent) {
-        var knownDimensions = "0x0";
+        var knownWidth = 0, knownHeight = 0;
         window.setInterval(function() {
             var root = document.documentElement,
                 dimensions = root.offsetWidth + 'x' + root.offsetHeight;
 
-            if (knownDimensions === dimensions) {
+            if (knownWidth === root.offsetWidth && knownHeight === root.offsetHeight) {
                 return;
             }
 
-            knownDimensions = dimensions;
+            knownWidth = root.offsetWidth;
+            knownHeight = root.offsetHeight;
+
             window.parent.postMessage(JSON.stringify({
                 "action": "dimensionsChange",
-                "dimensions": knownDimensions,
+                "width": knownWidth,
+                "height": knownHeight,
                 "updateId": updateId,
                 "embedIndex": embedIndex
             }), '*');
