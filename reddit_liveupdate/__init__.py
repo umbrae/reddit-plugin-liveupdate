@@ -81,5 +81,5 @@ class LiveUpdate(Plugin):
     def declare_queues(self, queues):
         from r2.config.queues import MessageQueue
         queues.declare({
-            "liveupdate_q": MessageQueue(bind_to_self=True),
+            "liveupdate_scraper_q": MessageQueue(bind_to_self=True),
         })

@@ -114,11 +114,10 @@ class LiveUpdateStream(tdb_cassandra.View):
     @classmethod
     def queue_parse_embeds(cls, event, update):
         msg = json.dumps({
-            'action': 'parse_embeds',
             'liveupdate_id': unicode(update._id),  # serializing UUID
             'event_id': event._id,  # Already a string
         })
-        amqp.add_item('liveupdate_q', msg)
+        amqp.add_item('liveupdate_scraper_q', msg)
 
     @classmethod
     def parse_embeds(cls, event_id, liveupdate_id, maxwidth=485):
