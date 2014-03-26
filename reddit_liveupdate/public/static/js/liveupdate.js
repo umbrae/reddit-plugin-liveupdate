@@ -25,8 +25,8 @@ r.liveupdate = {
                 'message:activity': this._onActivityUpdated,
                 'message:refresh': this._onRefresh,
                 'message:settings': this._onSettingsChanged,
-                'message:update': this._onNewUpdate,
-                'message:render_embeds': this._onRenderEmbeds
+                'message:embeds_ready': this._onEmbedsReady,
+                'message:update': this._onNewUpdate
             }, this)
             this._websocket.start()
         }
@@ -120,7 +120,7 @@ r.liveupdate = {
         }
     },
 
-    _onRenderEmbeds: function (data) {
+    _onEmbedsReady: function (data) {
         $('tr.id-LiveUpdate_' + data.liveupdate_id)
             .data('embeds', data.media_embeds)
             .addClass('pending-embed')

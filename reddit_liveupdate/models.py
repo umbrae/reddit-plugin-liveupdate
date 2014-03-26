@@ -116,7 +116,7 @@ class LiveUpdateStream(tdb_cassandra.View):
         msg = json.dumps({
             'action': 'parse_embeds',
             'liveupdate_id': unicode(update._id),  # serializing UUID
-            'event_id': event._id,  # This _id is already a string :(
+            'event_id': event._id,  # Already a string
         })
         amqp.add_item('liveupdate_q', msg)
 

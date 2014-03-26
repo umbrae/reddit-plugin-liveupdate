@@ -19,7 +19,7 @@ def _parse_and_broadcast_embeds(event_id, liveupdate_id, maxwidth=485):
         "liveupdate_id": liveupdate_id,
         "media_embeds": liveupdate.embeds
     }
-    send_event_broadcast(event_id, type="render_embeds", payload=payload)
+    send_event_broadcast(event_id, type="embeds_ready", payload=payload)
 
 
 def process_liveupdate_q():

@@ -8,7 +8,7 @@ from r2.controllers import add_controller
 from r2.controllers.reddit_base import (
     MinimalController,
     RedditController,
-    base_listing
+    base_listing,
 )
 from r2.lib import websockets
 from r2.lib.base import BaseController, abort
@@ -32,7 +32,6 @@ from r2.lib.errors import errors
 from r2.lib.utils import url_links_builder
 
 from reddit_liveupdate import pages
-from reddit_liveupdate.scraper import get_live_media_embed
 from reddit_liveupdate.models import (
     LiveUpdate,
     LiveUpdateEvent,
@@ -40,6 +39,7 @@ from reddit_liveupdate.models import (
     ActiveVisitorsByLiveUpdateEvent,
 )
 from reddit_liveupdate.permissions import ReporterPermissionSet
+from reddit_liveupdate.scraper import get_live_media_embed
 from reddit_liveupdate.utils import send_event_broadcast
 from reddit_liveupdate.validators import (
     VLiveUpdate,
@@ -429,10 +429,8 @@ class LiveUpdateEmbedController(MinimalController):
             # specifically untrusted domain
             abort(404)
 
-        media_objects = getattr(liveupdate, 'media_objects', [])
-
         try:
-            media_object = media_objects[embed_index]
+            media_object = liveupdate.media_objects[embed_index]
         except IndexError:
             abort(404)
 

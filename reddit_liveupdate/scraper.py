@@ -37,11 +37,13 @@ class LiveScraper(Scraper):
 
     """
     @classmethod
-    def for_url(cls, url, autoplay=True):
+    def for_url(cls, url, autoplay=False, maxwidth=485):
         if (_TwitterScraper.matches(url)):
             return _TwitterScraper(url)
 
-        return super(LiveScraper, cls).for_url(url, autoplay)
+        return super(LiveScraper, cls).for_url(url,
+                                               autoplay=autoplay,
+                                               maxwidth=maxwidth)
 
 
 def get_live_media_embed(media_object):
@@ -54,8 +56,7 @@ def generate_media_objects(urls, maxwidth=485, max_embeds=15):
     """Given a list of embed URLs, scrape and return their media objects."""
     media_objects = []
     for url in urls:
-        scraper = LiveScraper.for_url(url)
-        scraper.maxwidth = maxwidth
+        scraper = LiveScraper.for_url(url, maxwidth=maxwidth)
 
         # TODO: Is there a situation in which we would need the secure media
         # object? Are twitter/youtube/imgur appropriately protocol agnostic?
@@ -118,7 +119,7 @@ class _TwitterScraper(Scraper):
                                /\d+
                             """, re.X)
 
-    def __init__(self, url, maxwidth=600, omit_script=False):
+    def __init__(self, url, maxwidth=485, omit_script=False):
         self.url = url
         self.maxwidth = maxwidth
         self.omit_script = False
