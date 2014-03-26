@@ -3,6 +3,17 @@ r.ScrollUpdater = Backbone.View.extend({
     update: function() {},
 
     start: function() {
+        this._resetScrollState()
+        this._listen()
+        return this
+    },
+
+    restart: function() {
+        this._resetScrollState()
+        return this
+    },
+
+    _resetScrollState: function() {
         this._elements = $(this.selector)
         _.sortBy(this._elements, function(el) {
             return $(el).offset().top
@@ -13,11 +24,13 @@ r.ScrollUpdater = Backbone.View.extend({
         this._toUpdate = []
         this._totalTime = 0
 
+        // Trigger once now to detect any elements currently in view.
+        _.defer($.proxy(this, '_updateThings'))
+    },
+
+    _listen: function() {
         var throttledUpdate = _.throttle($.proxy(this, '_updateThings'), 20)
         $(window).on("scroll", throttledUpdate)
-
-        _.defer($.proxy(this, '_updateThings'))
-        return this
     },
 
     _updateThings: function(ev) {

@@ -273,30 +273,10 @@ r.liveupdate.EmbedViewer = r.ScrollUpdater.extend({
     selector: '.pending-embed',
     _embedBase: '//' + r.config.media_domain + '/mediaembed/liveupdate/' + r.config.liveupdate_event,
 
-    start: function(restart) {
-        this._elements = $(this.selector)
-        _.sortBy(this._elements, function(el) {
-            return $(el).offset().top
-        })
-
-        this._curIndex = 0
-        this._lastScroll = null
-        this._toUpdate = []
-        this._totalTime = 0
-
-        if (!restart) {
-            var throttledUpdate = _.throttle($.proxy(this, '_updateThings'), 20)
-            $(window).on("scroll", throttledUpdate)
-            $(window).on('liveupdate:refreshEmbeds', $.proxy(this, 'restart'))
-        }
-
-        _.defer($.proxy(this, '_updateThings'))
-
-        return this
-    },
-
-    restart: function() {
-        return this.start(true)
+    _listen: function() {
+        $(window).on('liveupdate:refreshEmbeds', $.proxy(this, 'restart'))
+        $(window).on('message', this._handleMessage)
+        r.ScrollUpdater.prototype._listen.apply(this, arguments);
     },
 
     update: function($el) {
@@ -345,7 +325,6 @@ r.liveupdate.EmbedViewer = r.ScrollUpdater.extend({
 
     init: function() {
         this.start()
-        $(window).on('message', this._handleMessage)
     }
 })
 
