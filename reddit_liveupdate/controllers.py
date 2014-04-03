@@ -32,6 +32,10 @@ from r2.lib.errors import errors
 from r2.lib.utils import url_links_builder
 
 from reddit_liveupdate import pages
+from reddit_liveupdate.media.embeds import (
+    get_live_media_embed,
+    queue_parse_embeds,
+)
 from reddit_liveupdate.models import (
     LiveUpdate,
     LiveUpdateEvent,
@@ -39,7 +43,6 @@ from reddit_liveupdate.models import (
     ActiveVisitorsByLiveUpdateEvent,
 )
 from reddit_liveupdate.permissions import ReporterPermissionSet
-from reddit_liveupdate.scraper import get_live_media_embed
 from reddit_liveupdate.utils import send_event_broadcast
 from reddit_liveupdate.validators import (
     VLiveUpdate,
@@ -365,6 +368,9 @@ class LiveUpdateController(RedditController):
         wrapped = builder.wrap_items([update])
         rendered = [w.render() for w in wrapped]
         _broadcast(type="update", payload=rendered)
+
+        # Queue up parsing any embeds
+        queue_parse_embeds(c.liveupdate_event, update)
 
         # reset the submission form
         t = form.find("textarea")
