@@ -13,7 +13,7 @@ from pycassa.system_manager import TIME_UUID_TYPE, UTF8_TYPE
 from r2.lib import amqp, utils
 from r2.lib.db import tdb_cassandra
 from r2.lib.utils import extract_urls_from_markdown
-from reddit_liveupdate.scraper import generate_media_objects
+from reddit_liveupdate.scraper import fetch_media_objects
 
 
 from reddit_liveupdate.permissions import ReporterPermissionSet
@@ -139,7 +139,7 @@ class LiveUpdateStream(tdb_cassandra.View):
             return
 
         urls = extract_urls_from_markdown(liveupdate.body)
-        liveupdate.media_objects = generate_media_objects(urls)
+        liveupdate.media_objects = fetch_media_objects(urls)
         LiveUpdateStream.add_update(event, liveupdate, parse_embeds=False)
 
         return liveupdate

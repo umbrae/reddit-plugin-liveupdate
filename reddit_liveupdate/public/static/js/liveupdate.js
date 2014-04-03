@@ -121,6 +121,8 @@ r.liveupdate = {
     },
 
     _onEmbedsReady: function (data) {
+        // Todo: There's a race here with cached embeds being passed before the update itself.
+        // Revisit after embed parsing is restructured.
         $('tr.id-LiveUpdate_' + data.liveupdate_id)
             .data('embeds', data.media_embeds)
             .addClass('pending-embed')

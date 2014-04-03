@@ -1,12 +1,21 @@
 import json
 import re
+
+from functools import partial
+from itertools import islice, imap, ifilter
+from urllib2 import (
+    HTTPError,
+    URLError,
+)
+
 import requests
+
 from pylons import g
 
 from r2.lib.hooks import HookRegistrar
-from r2.lib.media import Scraper, MediaEmbed, get_media_embed
+from r2.lib.media import Scraper, MediaEmbed, get_media_embed, upload_media
 from r2.lib.utils import UrlParser
-
+from r2.models.media_cache import MediaByURL, Media
 
 hooks = HookRegistrar()
 _EMBED_TEMPLATE = """
@@ -52,24 +61,66 @@ def get_live_media_embed(media_object):
     return get_media_embed(media_object)
 
 
-def generate_media_objects(urls, maxwidth=485, max_embeds=15):
-    """Given a list of embed URLs, scrape and return their media objects."""
-    media_objects = []
-    for url in urls:
-        scraper = LiveScraper.for_url(url, maxwidth=maxwidth)
+def _fetch_media_object(url, autoplay=False, maxwidth=485):
+    """Generate a single media object by URL. Caches with MediaByURL.
 
-        # TODO: Is there a situation in which we would need the secure media
-        # object? Are twitter/youtube/imgur appropriately protocol agnostic?
-        thumbnail, media_object, secure_media_object = scraper.scrape()
-        if media_object and 'oembed' in media_object:
-            # Use our exact passed URL to ensure matching in markdown.
-            # Some scrapers will canonicalize a URL to something we
-            # haven't seen yet.
-            media_object['oembed']['url'] = url
-            media_objects.append(media_object)
+    NOTE: This shares a lot of code with internal method _scrape_media in
+    r2.lib.media. That's an unfortunate circumstance of the kludginess of
+    the current MediaByURL implementation. This will likely be cleaned up
+    significantly if we end up rewriting MediaByURL as planned. (2014-04)
+    """
+    cache_params = {"autoplay": bool(autoplay), "maxwidth": int(maxwidth)}
 
-        if len(media_objects) > max_embeds:
-            break
+    cached_media = MediaByURL.get(url, **cache_params)
+    if cached_media:
+        media_object = cached_media.media.media_object
+    else:
+        # This may look like cache_params, but it's not: it's specific to the
+        # LiveScraper implementation and would break if cache_params changes.
+        scraper = LiveScraper.for_url(url,
+                                      autoplay=autoplay,
+                                      maxwidth=maxwidth)
+
+        try:
+            thumbnail, media_object, secure_media_object = scraper.scrape()
+        except (HTTPError, URLError) as e:
+            MediaByURL.add_error(url, str(e), **cache_params)
+
+        # Thumbnail handling. I hate that we're doing this here, because
+        # liveupdate doesn't care at all about thumbnails, but we're using
+        # a generalized system so we need to behave by its rules. This
+        # is about a clear a case as any that this needs to be abstracted
+        # out into its own system and that MediaByURL isn't cutting it.
+        thumbnail_size, thumbnail_url = None, None
+        if thumbnail:
+            thumbnail_size = thumbnail.size
+            thumbnail_url = upload_media(thumbnail)
+
+        # Store to cache - also stores None's in cases of no media object.
+        media = Media(media_object=media_object,
+                      secure_media_object=secure_media_object,
+                      thumbnail_url=thumbnail_url,
+                      thumbnail_size=thumbnail_size)
+        MediaByURL.add(url, media, **cache_params)
+
+    # No oembed? We don't want it for liveupdate.
+    if not media_object or 'oembed' not in media_object:
+        return None
+
+    # Use our exact passed URL to ensure matching in markdown.
+    # Some scrapers will canonicalize a URL to something we
+    # haven't seen yet.
+    media_object['oembed']['url'] = url
+
+    return media_object
+
+
+def fetch_media_objects(urls, autoplay=False, maxwidth=485, max_embeds=15):
+    """Given a list of URLs, potentially scrape and return media objects."""
+    gen_fn = partial(_fetch_media_object,
+                     autoplay=autoplay,
+                     maxwidth=maxwidth)
+    media_objects = list(islice(ifilter(None, imap(gen_fn, urls)), max_embeds))
 
     return media_objects
 
