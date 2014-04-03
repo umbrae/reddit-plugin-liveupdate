@@ -1,3 +1,6 @@
+<%!
+   import json
+%>
 <!doctype html>
 <html>
 <head>
@@ -8,18 +11,15 @@
     }
     </style>
 </head>
-<body data-update-id="${thing.liveupdate_id}" data-embed-index="${thing.embed_index}">
+<body>
     ${unsafe(thing.body)}
     % if thing.unknown_dimensions:
     <script type="text/javascript">
-    var updateId = document.body.getAttribute('data-update-id'),
-        embedIndex = document.body.getAttribute('data-embed-index');
-
     if (window.parent) {
         var knownWidth = 0, knownHeight = 0;
         window.setInterval(function() {
             var root = document.documentElement,
-                dimensions = root.offsetWidth + 'x' + root.offsetHeight;
+                context = ${unsafe(json.dumps(thing.js_context))};
 
             if (knownWidth === root.offsetWidth && knownHeight === root.offsetHeight) {
                 return;
@@ -32,8 +32,8 @@
                 "action": "dimensionsChange",
                 "width": knownWidth,
                 "height": knownHeight,
-                "updateId": updateId,
-                "embedIndex": embedIndex
+                "updateId": context.liveupdate_id,
+                "embedIndex": context.embed_index
             }), '*');
         }, 500);
     }

@@ -25,7 +25,7 @@ from reddit_liveupdate.utils import send_event_broadcast
 
 def get_live_media_embed(media_object):
     if media_object['type'] == "twitter.com":
-        return TwitterScraper.media_embed(media_object)
+        return _TwitterScraper.media_embed(media_object)
     return get_media_embed(media_object)
 
 
@@ -108,9 +108,8 @@ def _scrape_media_object(url, autoplay=False, maxwidth=485):
         except (HTTPError, URLError) as e:
             MediaByURL.add_error(url, str(e), **cache_params)
 
-        # Thumbnail handling. Liveupdate doesn't actually care about
-        # thumbnails, but we're using a generalized system for embed extraction
-        # so we need to behave by its rules.
+        # Note: Liveupdate doesn't care about thumbnails, but we're using a
+        # generalized system for embed extraction so we behave by its rules.
         thumbnail_size, thumbnail_url = None, None
         if thumbnail:
             thumbnail_size = thumbnail.size
@@ -146,15 +145,15 @@ class LiveScraper(Scraper):
 
     @classmethod
     def for_url(cls, url, autoplay=False, maxwidth=485):
-        if (TwitterScraper.matches(url)):
-            return TwitterScraper(url)
+        if (_TwitterScraper.matches(url)):
+            return _TwitterScraper(url)
 
         return super(LiveScraper, cls).for_url(url,
                                                autoplay=autoplay,
                                                maxwidth=maxwidth)
 
 
-class TwitterScraper(Scraper):
+class _TwitterScraper(Scraper):
     OEMBED_ENDPOINT = "https://api.twitter.com/1/statuses/oembed.json"
     URL_MATCH = re.compile(r"""https?:
                                //(www\.)?twitter\.com

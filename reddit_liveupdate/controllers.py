@@ -451,8 +451,10 @@ class LiveUpdateEmbedController(MinimalController):
         args = {
             "body": content,
             "unknown_dimensions": not (embed.width and embed.height),
-            "liveupdate_id": unicode(liveupdate._id),  # UUID serializing
-            "embed_index": embed_index,
+            "js_context": {
+                "liveupdate_id": unicode(liveupdate._id),  # UUID serializing
+                "embed_index": embed_index,
+            }
         }
 
         return pages.LiveUpdateMediaEmbedBody(**args).render()
