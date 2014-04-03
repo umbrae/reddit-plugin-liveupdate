@@ -32,7 +32,7 @@ from r2.lib.errors import errors
 from r2.lib.utils import url_links_builder
 
 from reddit_liveupdate import pages
-from reddit_liveupdate.media.embeds import (
+from reddit_liveupdate.media_embeds import (
     get_live_media_embed,
     queue_parse_embeds,
 )
