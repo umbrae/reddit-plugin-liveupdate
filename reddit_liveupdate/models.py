@@ -12,7 +12,7 @@ from pycassa.system_manager import TIME_UUID_TYPE, UTF8_TYPE
 
 from r2.lib import amqp, utils
 from r2.lib.db import tdb_cassandra
-from r2.lib.utils import extract_urls_from_markdown
+from r2.lib.utils import sanitize_url
 from reddit_liveupdate.scraper import fetch_media_objects
 
 
@@ -94,6 +94,15 @@ class LiveUpdateStream(tdb_cassandra.View):
     }
 
     @classmethod
+    def _extract_embed_friendly_urls(cls, md):
+        urls = []
+        for line in md.splitlines():
+            url = sanitize_url(line, require_scheme=True)
+            if url and url != "self":
+                urls.append(url)
+        return urls
+
+    @classmethod
     def add_update(cls, event, update, parse_embeds=True):
         columns = cls._obj_to_column(update)
         cls._set_values(event._id, columns)
@@ -138,7 +147,7 @@ class LiveUpdateStream(tdb_cassandra.View):
                           "%s / %s" % (event_id, liveupdate_id))
             return
 
-        urls = extract_urls_from_markdown(liveupdate.body)
+        urls = cls._extract_embed_friendly_urls(liveupdate.body)
         liveupdate.media_objects = fetch_media_objects(urls)
         LiveUpdateStream.add_update(event, liveupdate, parse_embeds=False)
 
