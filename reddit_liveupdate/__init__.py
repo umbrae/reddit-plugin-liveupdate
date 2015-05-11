@@ -175,6 +175,9 @@ class LiveUpdate(Plugin):
            controller="liveupdateembed", action="mediaembed")
 
     def load_controllers(self):
+        from r2.lib.pages import Reddit
+        Reddit.extra_stylesheets.append('liveupdate-public.less')
+
         from r2.controllers.api_docs import api_section, section_info
         api_section["live"] = "live"
         section_info["live"] = {
@@ -198,7 +201,6 @@ class LiveUpdate(Plugin):
         )
 
         from r2.config.templates import api
-        from r2.lib.pages import Reddit
         from reddit_liveupdate import pages
         api('liveupdateeventapp', pages.LiveUpdateEventAppJsonTemplate)
         api('liveupdatefocusapp', pages.LiveUpdateEventAppJsonTemplate)
@@ -208,7 +210,6 @@ class LiveUpdate(Plugin):
         api('liveupdatecontributortableitem',
             pages.ContributorTableItemJsonTemplate)
 
-        Reddit.extra_stylesheets.append('liveupdate-public.less')
 
         from reddit_liveupdate import scraper
         scraper.hooks.register_all()
