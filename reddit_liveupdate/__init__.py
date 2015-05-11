@@ -195,6 +195,7 @@ class LiveUpdate(Plugin):
         }
 
         from reddit_liveupdate.controllers import (
+            controller_hooks,
             LiveUpdateController,
             LiveUpdateEventsController,
             LiveUpdatePixelController,
@@ -210,11 +211,10 @@ class LiveUpdate(Plugin):
         api('liveupdatecontributortableitem',
             pages.ContributorTableItemJsonTemplate)
 
+        controller_hooks.register_all()
 
         from reddit_liveupdate import scraper
         scraper.hooks.register_all()
-        from reddit_liveupdate.hooks import hooks
-        hooks.register_all()
 
     def declare_queues(self, queues):
         from r2.config.queues import MessageQueue
