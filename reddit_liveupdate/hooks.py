@@ -23,7 +23,7 @@ def add_featured(controller):
     if getattr(controller, 'listing_obj') and controller.listing_obj.prev:
         return None
 
-    event_id = NamedGlobals.get('live_happening_now')
+    event_id = NamedGlobals.get('live_happening_now', None)
     if not event_id:
         return None
 
