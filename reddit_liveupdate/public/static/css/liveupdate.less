@@ -1,3 +1,8 @@
+// This file contains all css that will be necessary to run /live.
+// liveupdate-public contains CSS that must be available cross site (for callouts/banners/etc)
+
+@import "liveupdate-public";
+
 .infobar.welcome {
     display: none !important;
 }
@@ -95,80 +100,6 @@ body {
 }
 @keyframes blink { .blink-animation(); }
 @-webkit-keyframes blink { .blink-animation(); }
-
-#liveupdate-statusbar {
-    .status-bar-colors(@background) {
-        background-color: @background;
-        border: 1px solid darken(desaturate(spin(@background, 2), 53), 16);
-    }
-
-    color: #4f4f4f;
-    font-size: 15px;
-    padding: 5px;
-    .status-bar-colors(#eee);
-
-    .state {
-        font-weight: bold;
-        text-transform: uppercase;
-    }
-
-    &.live {
-        .state {
-            cursor: help;
-        }
-
-        @bauble-size: .75em;
-        .state:before {
-            content: "";
-            display: inline-block;
-            width: @bauble-size;
-            height: @bauble-size;
-            border-radius: @bauble-size/2;
-            background: #ff4500;
-            margin-right: @bauble-size/2;
-        }
-
-        :not(.state) {
-            display: none;
-        }
-
-        &.connected {
-            .status-bar-colors(#e2ffdb);
-
-            :not(.state) {
-                display: inline-block;
-            }
-        }
-
-        &.connecting, &.reconnecting {
-            .status-bar-colors(#fffcdb);
-
-            .state:before {
-                animation: blink .5s ease-out infinite alternate;
-                -webkit-animation: blink .5s ease-out infinite alternate;
-            }
-        }
-
-        &.disconnected {
-            .status-bar-colors(#ffdbdb);
-            text-align: center;
-
-            .state:before {
-                display: none;
-            }
-        }
-    }
-
-    &.complete {
-        background-color: #eee;
-        border: 1px solid #ddd;
-    }
-
-    p {
-        display: inline-block;
-        margin-right: .8em;
-    }
-}
 
 .main-content {
     margin-top: 2em;

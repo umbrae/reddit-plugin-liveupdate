@@ -198,6 +198,7 @@ class LiveUpdate(Plugin):
         )
 
         from r2.config.templates import api
+        from r2.lib.pages import Reddit
         from reddit_liveupdate import pages
         api('liveupdateeventapp', pages.LiveUpdateEventAppJsonTemplate)
         api('liveupdatefocusapp', pages.LiveUpdateEventAppJsonTemplate)
@@ -207,8 +208,12 @@ class LiveUpdate(Plugin):
         api('liveupdatecontributortableitem',
             pages.ContributorTableItemJsonTemplate)
 
+        Reddit.extra_stylesheets.append('liveupdate-public.less')
+
         from reddit_liveupdate import scraper
         scraper.hooks.register_all()
+        from reddit_liveupdate.hooks import hooks
+        hooks.register_all()
 
     def declare_queues(self, queues):
         from r2.config.queues import MessageQueue

@@ -1,0 +1,123 @@
+// CSS in here is imported into reddit's main CSS file, for inclusion of live features into reddit proper
+
+#liveupdate-statusbar {
+    .status-bar-colors(@background) {
+        background-color: @background;
+        border: 1px solid darken(desaturate(spin(@background, 2), 53), 16);
+    }
+
+    color: #4f4f4f;
+    font-size: 15px;
+    padding: 5px;
+    .status-bar-colors(#eee);
+
+    .state {
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+
+    &.live {
+        .state {
+            cursor: help;
+        }
+
+        @bauble-size: .75em;
+        .state:before {
+            content: "";
+            display: inline-block;
+            width: @bauble-size;
+            height: @bauble-size;
+            border-radius: @bauble-size/2;
+            background: #ff4500;
+            margin-right: @bauble-size/2;
+        }
+
+        :not(.state) {
+            display: none;
+        }
+
+        &.connected,
+        &.happening-now {
+            .status-bar-colors(#e2ffdb);
+
+            :not(.state) {
+                display: inline-block;
+            }
+        }
+
+        &.connecting, &.reconnecting {
+            .status-bar-colors(#fffcdb);
+
+            .state:before {
+                animation: blink .5s ease-out infinite alternate;
+                -webkit-animation: blink .5s ease-out infinite alternate;
+            }
+        }
+
+        &.disconnected {
+            .status-bar-colors(#ffdbdb);
+            text-align: center;
+
+            .state:before {
+                display: none;
+            }
+        }
+    }
+
+    &.complete {
+        background-color: #eee;
+        border: 1px solid #ddd;
+    }
+
+    p {
+        display: inline-block;
+        margin-right: .8em;
+    }
+}
+
+.liveupdate-happening-now {
+    display: block;
+
+    @logo-width: 50px;
+    @rank-padding: 7px;
+
+    .happening-now-logo {
+        position: absolute;
+        margin-left: -(@logo-width + @rank-padding);
+        display: inline-block;
+        width: @logo-width;
+        height: 26px;
+        background: transparent url(../liveupdate-logo.svg) center right no-repeat;
+        background-size: contain;
+    }
+
+    .rank-spacer, .midcol-spacer {
+        height: 1px;
+        float: left;
+    }
+
+    .midcol-spacer {
+        margin: 0 7px;
+    }
+
+    #liveupdate-statusbar {
+        overflow: hidden;
+        font-size: 12px;
+        color: #336699;
+
+        p {
+            margin-right: 0;
+        }
+
+        &.live .state {
+            cursor: pointer;
+        }
+
+        .watching {
+            margin-left: 7px;
+            color: #666;
+            font-size: 11px;
+            line-height: 12px;
+        }
+    }
+}

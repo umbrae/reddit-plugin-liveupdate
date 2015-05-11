@@ -1,0 +1,15 @@
+<a href="/live/${thing.event._id}" class="liveupdate-happening-now">
+  <div class="rank-spacer"></div>
+  <div class="midcol-spacer"></div>
+  <span class="happening-now-logo"></span>
+
+  <div id="liveupdate-statusbar" class="status-bar live happening-now">
+    <p class="state">${_('LIVE')}</p>
+    <p role="presentation">&nbsp;-&nbsp;</p>
+    <p class="description">${thing.event.title}</p>
+    <p class="watching">
+      ${ungettext('(%(num)s person watching)', '(%(num)s people watching)', thing.event.active_visitors) % dict(num=thing.event.active_visitors)}
+    </p>
+  </div>
+</a>
+
