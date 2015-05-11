@@ -1,3 +1,7 @@
+<%!
+    from r2.lib.template_helpers import format_number
+%>
+
 <a href="/live/${thing.event._id}" class="liveupdate-happening-now">
   <div class="rank-spacer"></div>
   <div class="midcol-spacer"></div>
@@ -8,7 +12,7 @@
     <p role="presentation">&nbsp;-&nbsp;</p>
     <p class="description">${thing.event.title}</p>
     <p class="watching">
-      ${ungettext('(%(num)s person watching)', '(%(num)s people watching)', thing.event.active_visitors) % dict(num=thing.event.active_visitors)}
+      ${ungettext('(%(num)s person watching)', '(%(num)s people watching)', thing.event.active_visitors) % dict(num=format_number(thing.event.active_visitors))}
     </p>
   </div>
 </a>
