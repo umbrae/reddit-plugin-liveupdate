@@ -73,7 +73,7 @@
     <p class="description">${thing.event.title}</p>
     <p class="watching">
     <%
-      num_watching = thing.event.active_visitors - (thing.event.active_visitors % 100)
+      num_watching = round(thing.event.active_visitors, -2)
     %>
       ${ungettext('(~%(num)s person watching)', '(~%(num)s people watching)', num_watching) % dict(num=format_number(num_watching))}
     </p>
