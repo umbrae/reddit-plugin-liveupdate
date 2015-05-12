@@ -175,9 +175,6 @@ class LiveUpdate(Plugin):
            controller="liveupdateembed", action="mediaembed")
 
     def load_controllers(self):
-        from r2.lib.pages import Reddit
-        Reddit.extra_stylesheets.append('liveupdate-public.less')
-
         from r2.controllers.api_docs import api_section, section_info
         api_section["live"] = "live"
         section_info["live"] = {
