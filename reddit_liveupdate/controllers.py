@@ -110,9 +110,21 @@ def _broadcast(type, payload):
 
 
 class LiveUpdateBuilder(QueryBuilder):
+    def __init__(self, query, pinned_update=None, *args, **kw):
+        self.pinned_update = pinned_update
+        super(LiveUpdateBuilder, self).__init__(query, *args, **kw)
+
     def wrap_items(self, items):
         wrapped = []
+        # If we were given a pinned update, always stick it to the top
+        # and skip it later
+        if self.pinned_update:
+            w = self.wrap(self.pinned_update)
+            wrapped.append(w)
+
         for item in items:
+            if self.pinned_update and item._id == self.pinned_update._id:
+                continue
             w = self.wrap(item)
             wrapped.append(w)
         pages.liveupdate_add_props(c.user, wrapped)
@@ -297,9 +309,10 @@ class LiveUpdateController(RedditController):
                                        count=num, reverse=reverse)
         if after:
             query.column_start = after
+        pinned_update = c.liveupdate_event.pinned_update
         builder = LiveUpdateBuilder(query=query, skip=True,
                                     reverse=reverse, num=num,
-                                    count=count)
+                                    count=count, pinned_update=pinned_update)
         listing = pages.LiveUpdateListing(builder)
         wrapped_listing = listing.listing()
 
@@ -809,6 +822,26 @@ class LiveUpdateController(RedditController):
         liveupdate_events.update_event(update, context=c, request=request)
 
         _broadcast(type="delete", payload=update._fullname)
+
+    @require_oauth2_scope("edit")
+    @validatedForm(
+        VModhash(),
+        update=VLiveUpdate("id", required=False, default=None),
+    )
+    @api_doc(
+        section=api_section.live,
+    )
+    def POST_set_pinned_update(self, form, jquery, update):
+        """Set the pinned update ID for a live thread, or no pinned update.
+
+        Requires that you have the `edit` permission for this thread.
+
+        See also: [/api/live/*thread*/update](#POST_api_live_{thread}_update).
+
+        If update is empty, unsets any pinned update.
+        """
+        c.liveupdate_event.set_pinned_update(update)
+        _broadcast(type="pin", payload=getattr(update, '_fullname', None))
 
     @require_oauth2_scope("edit")
     @validatedForm(

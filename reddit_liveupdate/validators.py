@@ -66,6 +66,10 @@ class VLiveUpdateID(Validator):
 
 
 class VLiveUpdate(VLiveUpdateID):
+    def __init__(self, param, required=True, *args, **kwargs):
+        super(VLiveUpdate, self).__init__(param, *args, **kwargs)
+        self.required = required
+
     def run(self, fullname):
         id = VLiveUpdateID.run(self, fullname)
 
@@ -76,7 +80,10 @@ class VLiveUpdate(VLiveUpdateID):
             except tdb_cassandra.NotFound:
                 pass
 
-        self.set_error(errors.NO_THING_ID)
+        if self.required:
+            self.set_error(errors.NO_THING_ID)
+        else:
+            return None
 
 
 class VLiveUpdateContributorWithPermission(Validator):

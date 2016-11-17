@@ -41,6 +41,7 @@ class LiveUpdateEvent(tdb_cassandra.Thing):
         "banned": False,
         "banned_by": "(unknown)",
         "nsfw": False,
+        "pinned_update_id": "",
     }
 
     @classmethod
@@ -84,6 +85,20 @@ class LiveUpdateEvent(tdb_cassandra.Thing):
         else:
             prefix = ''
         return '%s/live/%s' % (prefix, self._id)
+
+    def set_pinned_update(self, update=None):
+        if not update:
+            self.pinned_update_id = ""   # Todo: Why does None type convert here?
+        else:
+            self.pinned_update_id = update._id
+        self._commit()
+
+    @property
+    def pinned_update(self):
+        if not self.pinned_update_id:
+            return None
+
+        return LiveUpdateStream.get_update(self, uuid.UUID(self.pinned_update_id))
 
     @classmethod
     def new(cls, id, title, **properties):

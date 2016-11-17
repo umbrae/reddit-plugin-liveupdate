@@ -38,6 +38,7 @@
         date: response.data.created_utc * 1000,
         author: response.data.author,
         stricken: response.data.stricken,
+        pinned: response.data.pinned,
         body: response.data.body_html,
         embeds: response.data.embeds,
       }
@@ -52,6 +53,19 @@
           id: this.get('id'),
         },
       })
+    },
+
+    pin: function() {
+      return this._sendRPC('set_pinned_update')
+    },
+
+    unpin: function() {
+      return r.ajax({
+        type: 'POST',
+        dataType: 'json',
+        url: '/api/live/' + r.config.liveupdate_event + '/set_pinned_update',
+        data: {}, // empty, clear pinned update
+      });
     },
 
     strike: function() {
@@ -100,6 +114,8 @@
     tagName: 'li',
     className: 'liveupdate',
     events: {
+      'confirm .pin': 'onPin',
+      'confirm .unpin': 'onUnpin',
       'confirm .strike': 'onStrike',
       'confirm .delete': 'onDelete',
     },
@@ -116,6 +132,18 @@
       if (this.model.get('author') === r.config.logged ||
           this.permissions.allow('edit')) {
         var $buttonRow = $('<ul class="buttonrow">')
+
+        if (!this.model.get('pinned')) {
+          $buttonRow.append(r.templates.make('liveupdate/edit-button', {
+            name: 'pin',
+            label: r._('pin'),
+          }))
+        } else {
+          $buttonRow.append(r.templates.make('liveupdate/edit-button', {
+            name: 'unpin',
+            label: r._('unpin'),
+          }))
+        }
 
         if (!this.model.get('stricken')) {
           $buttonRow.append(r.templates.make('liveupdate/edit-button', {
@@ -170,6 +198,7 @@
           id: this.model.get('id').replace(/^LiveUpdate_/, ''),
           eventId: r.config.liveupdate_event,
           body: this.model.get('body'),
+          pinned: this.model.get('pinned'),
           authorName: this.model.get('author'),
           isoDate: time.toISOString(),
         }))
@@ -184,6 +213,25 @@
       }
 
       return this
+    },
+
+    onPin: function() {
+      var $button = this.$el.find('.pin.confirm-button')
+      $button.text(r._('pinning…'))
+      this.model.pin()
+        .done(function() {
+          $button.text(r._('pinned'))
+        })
+    },
+
+    onUnpin: function() {
+      console.log("HIHIHI")
+      var $button = this.$el.find('.unpin.confirm-button')
+      $button.text(r._('unpinning…'))
+      this.model.unpin()
+        .done(function() {
+          $button.text(r._('unpinned'))
+        })
     },
 
     onStrike: function() {

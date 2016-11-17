@@ -90,6 +90,18 @@
         'message:delete': function(updateId) {
           this.listing.remove(updateId)
         },
+        'message:pin': function(updateId) {
+          if (!updateId) {
+            // TODO CHRIS:
+            // Update the API to send explicitly what was unpinned, and to take in an update to unpin
+            // This will allow races to be avoided in the API and also make unpinning something cleaner
+            // here.
+            // Still to do: handle updates flowing underneath the pinned update. Handle pinning something
+            // that is no longer rendered.
+          }
+          var pinned = this.listing.get(updateId)
+          pinned.set('pinned', true)
+        },
         'message:strike': function(updateId) {
           var stricken = this.listing.get(updateId)
           stricken.set('stricken', true)

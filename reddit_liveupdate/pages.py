@@ -194,6 +194,7 @@ class LiveUpdateEventJsonTemplate(ThingJsonTemplate):
         viewer_count_fuzzed="viewer_count_fuzzed",
         title="title",
         nsfw="nsfw",
+        pinned_update_id="pinned_update_id",
         description="description",
         description_html="description_html",
         resources="resources",
@@ -399,6 +400,7 @@ class LiveUpdateJsonTemplate(ThingJsonTemplate):
         body_html="body_html",
         author="author",
         stricken="stricken",
+        pinned="pinned",
         embeds="embeds",
     )
 
@@ -414,6 +416,9 @@ class LiveUpdateJsonTemplate(ThingJsonTemplate):
                 return None
         elif attr == "stricken":
             return bool(thing.stricken)
+        elif attr == "pinned":
+            # Todo: Better compare?
+            return c.liveupdate_event.pinned_update_id == str(thing._id)
         return ThingJsonTemplate.thing_attr(self, thing, attr)
 
     def kind(self, wrapped):

@@ -266,7 +266,8 @@ body {
     li.liveupdate {
         overflow: auto;
 
-        time {
+        .live-meta {
+
             @bauble-width: 20px;
 
             display: inline-block;
@@ -298,6 +299,15 @@ body {
                 margin-right: 6px;
                 margin-left: 6px;
                 transition: background @transition-time;
+            }
+
+            &.pinned:before {
+              content: "";
+              background: transparent url(../icon-pin.png) center center no-repeat;
+              width: 12px;
+              height: 12px;
+              background-size: 12px 12px;
+              margin-left: 2px;
             }
         }
 
